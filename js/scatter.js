@@ -1,20 +1,28 @@
-function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop=30, marginRight= 70, marginBottom= 60, marginLeft= 120) {
+function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScale=d3.scaleLinear(),yScale=d3.scaleLinear(),targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop = 30, marginRight = 70, marginBottom = 60, marginLeft = 120, legendLocationSelection = "bottomRight") {
 
 
     var innerHeight = outerHeight - marginTop - marginBottom;
     var innerWidth = outerWidth - marginLeft - marginRight;
 
-    // TODO: if radiusData is not specified
+    if (radiusData == "") {
+        var rScale = radius;
+    } else {
+        var rMin = 0;
+        var rMax = 20;
+        var rScale = d3.scaleSqrt().range([rMin, rMax]);
+    }
 
-    // TODO: if colorData is not specified
+    if (colorData == "") {
+        var colorScale = color;
+    } else {
+        var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    }
 
-    var legendLocationSelection = "bottomRight"
-    var rMin = 0;
-    var rMax = 20;
     var xAxisLabelOffset = 50;
-    var yAxisLabelOffset = 70;
-    var xAxisLabelText = xAxisC.split("_").map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
-    var yAxisLabelText = yAxisC.split("_").map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+    var yAxisLabelOffset = 80;
+
+    var xAxisLabelText = xAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+    var yAxisLabelText = yAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
     var filtered = false;
 
     var legendLocation = {
@@ -22,10 +30,9 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
         bottomRight: [innerHeight - xAxisLabelOffset, -1]
     }
 
-    var xScale = d3.scaleLinear().range([0, innerWidth]);
-    var yScale = d3.scaleLinear().range([innerHeight, 0]);
-    var rScale = d3.scaleSqrt().range([rMin, rMax]);
-    var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+    xScale = xScale.range([0, innerWidth]);
+    yScale = yScale.range([innerHeight, 0]);
+
 
     var yAxis = d3.axisLeft(yScale);
     var xAxis = d3.axisBottom(xScale);
@@ -59,7 +66,7 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
     function render(data) {
         xScale.domain(d3.extent(data, d => d[xAxisC]));
         yScale.domain(d3.extent(data, d => d[yAxisC]));
-        rScale.domain([0, d3.max(data, d => d[radiusData])]);
+        Number.isInteger(rScale) ? null : rScale.domain([0, d3.max(data, d => d[radiusData])]);
 
         xAxisG.call(xAxis);
         yAxisG.call(yAxis);
@@ -68,77 +75,73 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
 
         circles.enter()
             .append("circle")
-            .attr('r', data => rScale(data[radiusData]))
+            .attr('r', data => Number.isInteger(rScale) ? rScale : rScale(data[radiusData]))
             .attr('cx', data => xScale(data[xAxisC]))
             .attr('cy', data => yScale(data[yAxisC]))
-            .attr('fill', data => colorScale(data[colorData]))
+            .attr('fill', data => typeof colorScale == "string" ? colorScale : colorScale(data[colorData]))
             .attr('opacity', 0.6)
             .exit()
             .remove();
 
-        var legend = g.selectAll(".legend")
-            .data(colorScale.domain());
 
-        legend.enter()
-            .append('rect')
-            .attr("y", (d, i) => legendLocation[legendLocationSelection][0] + (legendLocation[legendLocationSelection][1] * i * 20))
-            .attr('x', innerWidth)
-            .attr('width', 18)
-            .attr('height', 18)
-            .attr('fill', colorScale)
-            .exit()
-            .remove();
+        if (typeof colorScale != "string") {
+            var legend = svg.selectAll(".legend")
+                .data(colorScale.domain());
 
-        legend.enter()
-            .append('text')
-            .attr('x', innerWidth - 6)
-            .attr('y', (d, i) => legendLocation[legendLocationSelection][0] + (legendLocation[legendLocationSelection][1] * i * 20) + 8)
-            .attr('dy', '.35em')
-            .style('text-anchor', 'end')
-            .text(function (d) {
-                return d;
-            })
-            .exit()
-            .remove();
+            legend.enter()
+                .append('rect')
+                .attr("y", (d, i) => legendLocation[legendLocationSelection][0] + (legendLocation[legendLocationSelection][1] * i * 20))
+                .attr('x', outerWidth - 30)
+                .attr('width', 18)
+                .attr('height', 18)
+                .attr('fill', colorScale)
+                .exit()
+                .remove();
 
-        var rects = document.querySelectorAll('rect')
-
-        rects.forEach(rect => {
-            rect.addEventListener('click', event => {
-                if (filtered) {
-                    filtered = false;
-                    d3.selectAll('circle')
-                        .style('opacity', 0.6)
-                } else {
-                    filtered = true;
-                    d3.selectAll('circle')
-                        .style('opacity', 0.15)
-                        .filter(function (d) {
-                            return colorScale(d[colorData]) == event.target.attributes.fill.nodeValue;
-                        })
-                        .style('opacity', 1);
-                }
-            });
-        });
-
-        legend.onclick = function (type) {
-            d3.selectAll('circle')
-                .style('opacity', 0.15)
-                .filter(function (d) {
-                    return data[colorData] == type;
+            legend.enter()
+                .append('text')
+                .attr('x', outerWidth - 40)
+                .attr('y', (d, i) => legendLocation[legendLocationSelection][0] + (legendLocation[legendLocationSelection][1] * i * 20) + 8)
+                .attr('dy', '.35em')
+                .style('text-anchor', 'end')
+                .text(function (d) {
+                    return d;
                 })
-                .style('opacity', 1);
+                .exit()
+                .remove();
+
+            var rects = document.querySelectorAll('rect')
+
+            rects.forEach(rect => {
+                rect.addEventListener('click', event => {
+                    if (filtered) {
+                        filtered = false;
+                        d3.selectAll('circle')
+                            .style('opacity', 0.6)
+                    } else {
+                        filtered = true;
+                        d3.selectAll('circle')
+                            .style('opacity', 0.15)
+                            .filter(function (d) {
+                                return colorScale(d[colorData]) == event.target.attributes.fill.nodeValue;
+                            })
+                            .style('opacity', 1);
+                    }
+                });
+            });
+
+            legend.onclick = function (type) {
+                d3.selectAll('circle')
+                    .style('opacity', 0.15)
+                    .filter(function (d) {
+                        return data[colorData] == type;
+                    })
+                    .style('opacity', 1);
+            }
+
         }
     }
 
-    function type(d) {
-        d.sepal_length = +d.sepal_length;
-        d.sepal_width = +d.sepal_width;
-        d.petal_length = +d.petal_length;
-        d.petal_width = +d.petal_width;
-        return d;
-    }
-
-    d3.dsv(",", dataPath, type).then((data) => render(data));
+    d3.dsv(",", dataPath, d3.autoType).then((data) => render(data));
 
 }
