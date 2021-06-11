@@ -1,4 +1,4 @@
-function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScale=d3.scaleLinear(),yScale=d3.scaleLinear(),targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop = 30, marginRight = 70, marginBottom = 60, marginLeft = 120, legendLocationSelection = "bottomRight") {
+function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScale=d3.scaleLinear(),yScale=d3.scaleLinear(),xAxisFormat = null, yAxisFormat = null, targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop = 30, marginRight = 70, marginBottom = 60, marginLeft = 120, legendLocationSelection = "bottomRight") {
 
 
     var innerHeight = outerHeight - marginTop - marginBottom;
@@ -27,7 +27,7 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
 
     var legendLocation = {
         topRight: [0, 1],
-        bottomRight: [innerHeight - xAxisLabelOffset, -1]
+        bottomRight: [innerHeight, -1]
     }
 
     xScale = xScale.range([0, innerWidth]);
@@ -37,10 +37,13 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
     var yAxis = d3.axisLeft(yScale);
     var xAxis = d3.axisBottom(xScale);
 
+    d3.select(targetId).selectAll("svg").remove()
+
     var svg = d3.select(targetId)
         .append("svg")
         .attr("width", outerWidth)
         .attr("height", outerHeight)
+        .style('border', "1px solid black")
 
     var g = svg.append("g")
         .attr('transform', 'translate(' + marginLeft + ',' + marginTop + ')')
@@ -67,6 +70,11 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
         xScale.domain(d3.extent(data, d => d[xAxisC]));
         yScale.domain(d3.extent(data, d => d[yAxisC]));
         Number.isInteger(rScale) ? null : rScale.domain([0, d3.max(data, d => d[radiusData])]);
+
+        
+
+        xAxisFormat == null ? null : xAxis.tickFormat(d3.format(xAxisFormat));
+        yAxisFormat == null ? null : yAxis.tickFormat(d3.format(yAxisFormat));
 
         xAxisG.call(xAxis);
         yAxisG.call(yAxis);
