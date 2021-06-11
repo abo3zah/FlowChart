@@ -1,4 +1,4 @@
-function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScale=d3.scaleLinear(),yScale=d3.scaleLinear(),xAxisFormat = null, yAxisFormat = null, targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop = 30, marginRight = 70, marginBottom = 60, marginLeft = 120, legendLocationSelection = "bottomRight") {
+function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScale=d3.scaleLinear(),yScale=d3.scaleLinear(),xAxisFormat = null, yAxisFormat = null, opacitySet = 0.6,targetId = "#main", outerWidth = 500, outerHeight = 500, marginTop = 30, marginRight = 70, marginBottom = 60, marginLeft = 120, legendLocationSelection = "bottomRight") {
 
 
     var innerHeight = outerHeight - marginTop - marginBottom;
@@ -51,19 +51,23 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
     var xAxisG = g.append("g")
         .attr("transform", "translate(0," + innerHeight + ")")
         .attr('class', "x axis")
+        .style('font-size','12pt')
 
     var xAxisLabel = xAxisG.append("text")
         .attr('text-anchor', 'middle')
         .attr("transform", "translate(" + (innerWidth / 2) + ", " + xAxisLabelOffset + ")")
         .attr("class", 'label')
+        .style('font-size','18pt')
         .text(xAxisLabelText)
 
     var yAxisG = g.append("g")
         .attr('class', "y axis")
+        .style('font-size','12pt')
 
     var yAxisLabel = yAxisG.append("text")
         .attr("transform", "translate(" + -yAxisLabelOffset + ", " + (innerHeight / 2 + yAxisLabelOffset) + ") rotate(90)")
         .attr("class", 'label')
+        .style('font-size','18pt')
         .text(yAxisLabelText)
 
     function render(data) {
@@ -87,7 +91,7 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
             .attr('cx', data => xScale(data[xAxisC]))
             .attr('cy', data => yScale(data[yAxisC]))
             .attr('fill', data => typeof colorScale == "string" ? colorScale : colorScale(data[colorData]))
-            .attr('opacity', 0.6)
+            .attr('opacity', opacitySet)
             .exit()
             .remove();
 

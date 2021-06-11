@@ -8,25 +8,25 @@
     <title>الرسام</title>
     <style>
         text{
-            font-size: 12pt;
             fill: black;
         }
 
-        .axis path, .axis line {
-            fill:none;
-            stroke: #000;
-            shape-rendering: crispEdges;
+        #dropDownGroup{
+            padding:0px 16px 0px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 2px;
         }
 
-        .axis .label {
-            font-size: 18pt;
-            fill: black;
+        #drawingArea{
+            padding:0px 16px 0px 16px;
         }
     </style>
 </head>
 <body>
     <h3 class="text-center bg-primary text-white">Scatter Plot Using D3</h3>
-    <div id="main" class="container-fluid p-3 col-sm-12"></div>
+    <div id="dropDownGroup"></div>
+    <div id="drawingArea"></div>
     <script src="js/d3.v6.min.js"></script>
     <script src="js\scatter.js"></script>
     <script src="js\scatterD3IRISScript.js"></script>
