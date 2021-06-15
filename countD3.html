@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>Bar Plot Using D3</title>
+    <style>
+        input:invalid{
+            background-color: brown;
+            color: white;
+        }
+
+        #InputGroup label{
+            background-color: hsl(200,100%,40%);
+            color:hsl(0,0%,100%)
+        }
+
+        #dropDownGroup label, #filePathDiv label{
+            background-color: hsl(0,0%,40%);
+            color:hsl(0,0%,100%)
+        }
+
+        #filePathDiv{
+            padding:0px 16px 0px 16px;
+            display: grid;
+            grid-template-columns: repeat(1, 1fr 2fr);
+            grid-gap: 2px;
+        }
+
+        #dropDownGroup{
+            padding:0px 16px 0px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 2px;
+        }
+
+        #InputGroup{
+            padding:0px 16px 0px 16px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 2px;
+        }
+
+        #drawingArea{
+            padding:0px 16px 0px 16px;
+        }
+    </style>
+</head>
+<body>
+    <h3 class="text-center bg-primary text-white">Scatter Plot Using D3</h3>
+
+    <div id="filePathDiv">
+        <label for="filePath" class="form-control">File Path</label>
+        <input type="text" name="filePath" id="filePath" class="form-control" value="https://raw.githubusercontent.com/curran/data/gh-pages/all/iris_iris.csv" onchange="loadingFile()">
+    </div>
+
+    <hr>
+
+    <div id="InputGroup">
+
+        <label for="drawingWidth" class="form-control">Drawing Width</label>
+        <input type="number" name="drawingWidth" min=100 id="drawingWidth" class="form-control" onchange="draw()">
+
+        <label for="drawingHeight" class="form-control">Drawing Height</label>
+        <input type="number" min=100 name="drawingHeight" id="drawingHeight" class="form-control" value=450 onchange="draw()">
+    </div>
+
+    <hr>
+
+    <div id="dropDownGroup"></div>
+
+    <hr>
+    <div id="drawingArea"></div>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="js\d3DrawWithConfiguration.js"></script>
+    <script src="js\countBarD3Script.js"></script>
+</body>
+</html>
