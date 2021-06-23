@@ -1,7 +1,3 @@
-function onlyUnique(value, index, self) {
-    return self.indexOf(value) === index;
-}
-
 function highlightSelection(selected, targetId, shape, opacitySet, colorColumn){
 
     //highlight selection
@@ -55,7 +51,65 @@ function preparationFunction(targetId, title, outerWidth, outerHeight, marginTop
     return [innerHeight, innerWidth, tickFontSize, axisLabelSize]
 }
 
-function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScaleSelection='scaleLinear',yScaleSelection='scaleLinear',xAxisFormat = null, yAxisFormat = null, opacitySet = 0.6,targetId = "#drawingArea", outerWidth = 500, outerHeight = 500, marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 70, legendLocationSelection = "bottomRight", svgBackgroundColor='white',title="", ticksShow = true) {
+function xAndYScale(data, xAxisC, yAxisC, bar, xScale, yScale,innerWidth, innerHeight, yAxisFormat, violin=false){
+
+    //extracting the data
+    var xData = data.map(d=>d[xAxisC]);
+    var yData = data.map(d=>d[yAxisC]);
+
+
+    xScale = d3[xScale]()
+        .domain(bar || violin?xData:d3.extent(xData))
+        .range([0,innerWidth])
+
+    yScale = d3[yScale]()
+        .domain(bar?[0,d3.max(yData)]:violin?[d3.min(yData)*0.8,d3.max(yData)*1.2]:d3.extent(yData))
+        .range([innerHeight,0])
+
+    var padding = violin?0.5:(xData.length-1)/xData.length
+
+    yAxisFormat == "null" & (d3.max(yData)-d3.min(yData)>1000)?yAxisFormat="~s":'null'
+
+    return [xScale,yScale,padding, yAxisFormat]
+}
+
+function drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, xAxisFormat, yAxisFormat, marginLeft, axisLabelSize, xAxisLabelText, yAxisLabelText){
+    //select drawing area
+    var g = d3.select('.drawingArea');
+    
+    //defining xAxis ticks and Label
+    g.append("g")
+    .attr("transform", "translate(0," + innerHeight + ")")
+    .attr('class', "x axis")
+    .style('font-size', tickFontSize +'pt')
+    .call(d3.axisBottom(xScale)
+        .tickSize(xTicksShow==true?-innerHeight:0)
+        .tickFormat(xAxisFormat == "null"? null :d3.format(xAxisFormat)))
+    .append("text")
+        .attr('text-anchor', 'middle')
+        .attr("x", innerWidth/2 + marginLeft)
+        .attr("y", 30)
+        .attr("class", 'label')
+        .style('font-size',axisLabelSize + 'pt')
+        .text(xAxisLabelText)
+
+    //defining yAxis ticks and Label
+    g.append("g")
+        .attr('class', "y axis")
+        .style('font-size', tickFontSize +'pt')
+        .call(d3.axisLeft(yScale)
+            .tickSize(yTicksShow==true?-innerWidth:0)
+            .tickFormat(yAxisFormat == "null"? null :d3.format(yAxisFormat)))
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr('y',-30)
+            .attr('x', -(innerHeight / 2)+30)
+            .attr("class", 'label')
+            .style('font-size',axisLabelSize + 'pt')
+            .text(yAxisLabelText)
+}
+
+function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colorData = "", color = "", xScaleSelection='scaleLinear',yScaleSelection='scaleLinear',xAxisFormat = null, yAxisFormat = null, opacitySet = 0.6,targetId = "#drawingArea", outerWidth = 500, outerHeight = 500, marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 70, legendLocationSelection = "bottomRight", svgBackgroundColor='white',title="", xTicksShow = true, yTicksShow=true) {
 
     ////preparing the xAxis Label
     var xAxisLabelText = xAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
@@ -79,46 +133,11 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
 
     function render(data) {
 
-        //defining xScale
-        var xScale = d3[xScaleSelection]()
-            .range([0, innerWidth])
-            .domain(d3.extent(data, d => d[xAxisC]));
+        //defining Scales
+        [xScale, yScale, padding, yAxisFormat] = xAndYScale(data, xAxisC, yAxisC, false, xScaleSelection, yScaleSelection, innerWidth, innerHeight, yAxisFormat)
 
-        //defining xAxis ticks and Label
-        g.append("g")
-            .attr("transform", "translate(0," + innerHeight + ")")
-            .attr('class', "x axis")
-            .style('font-size', tickFontSize +'pt')
-            .call(d3.axisBottom(xScale)
-                .tickSize(ticksShow==true?-innerHeight:0)
-                .tickFormat(xAxisFormat == "null"? null :d3.format(xAxisFormat)))
-            .append("text")
-                .attr('text-anchor', 'middle')
-                .attr("x", innerWidth/2 + marginLeft)
-                .attr("y", 30)
-                .attr("class", 'label')
-                .style('font-size',axisLabelSize + 'pt')
-                .text(xAxisLabelText)
-        
-        //defining yScale
-        var yScale = d3[yScaleSelection]()
-            .range([innerHeight, 0])
-            .domain(d3.extent(data, d => d[yAxisC]));
-        
-        //defining yAxis ticks and Label
-        g.append("g")
-            .attr('class', "y axis")
-            .style('font-size', tickFontSize +'pt')
-            .call(d3.axisLeft(yScale)
-                .tickSize(ticksShow==true?-innerWidth:0)
-                .tickFormat(yAxisFormat == "null"? null :d3.format(yAxisFormat)))
-            .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr('y',-30)
-                .attr('x', -(innerHeight / 2)+30)
-                .attr("class", 'label')
-                .style('font-size',axisLabelSize + 'pt')
-                .text(yAxisLabelText)
+        //drawing Axises
+        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, xAxisFormat, yAxisFormat, marginLeft, axisLabelSize, xAxisLabelText, yAxisLabelText)
         
         //defining the radius scale
         radiusData == ""? rScale = radius : rScale = d3.scaleSqrt().range([0, 20]).domain([0, d3.max(data, d => d[radiusData])]);
@@ -175,38 +194,18 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
 
 function countDraw(data, xAxisC, targetId = "#drawingArea", outerWidth = 1000, outerHeight = 500, yAxisFormat = 'null', marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 120,svgBackgroundColor='white', xTicksShow = false, yTicksShow=false) {
 
-    d3.dsv(",", data, d3.autoType).then((data) => render(data));
-
     function render(data){
-        var category = data.map(d=>d[xAxisC]).filter(onlyUnique)
-        var count = category.map(c => data.filter((d)=> d.Class == c).length)
-    
-        var data = []
-        for (var i =0;i< category.length;i++){
-            data.push({'name':category[i],'count':count[i]})
+        
+        var count = []
+        
+        for ( i of Array.from(d3.rollup(data, v => v.length, d => d[xAxisC]))){
+            count.push({'name':i[0],'count':i[1]})
         }
 
-        barDraw(data, 'name', 'count', targetId, outerWidth, outerHeight, yAxisFormat, marginTop, marginRight, marginBottom, marginLeft,svgBackgroundColor, xTicksShow, yTicksShow)
+        barDraw(count, 'name', 'count', targetId, outerWidth, outerHeight, yAxisFormat, marginTop, marginRight, marginBottom, marginLeft,svgBackgroundColor, xTicksShow, yTicksShow)
     }
-}
 
-function xAndYScale(data, xAxisC, yAxisC, bar, xScale, yScale,innerWidth, innerHeight){
-    
-    //extracting the data
-    var xData = data.map(d=>d[xAxisC]);
-    var yData = data.map(d=>d[yAxisC]);
-
-    xScale = d3[xScale]()
-        .domain(bar?xData:d3.extent(xData))
-        .range([0,innerWidth])
-
-    yScale = d3[yScale]()
-        .domain(d3.extent(yData))
-        .range([0,innerHeight])
-
-    var padding = (xData.length-1)/xData.length
-    
-    return [xScale,yScale,padding]
+    d3.dsv(",", data, d3.autoType).then((data) => render(data));
 }
 
 function barDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1000, outerHeight = 500, yAxisFormat = 'null', marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 120,svgBackgroundColor='white',title='', xTicksShow = false, yTicksShow=false) {
@@ -217,6 +216,7 @@ function barDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1
 
     ////general preparation
     title == ""? title = yAxisLabelText + " by " + xAxisLabelText : null
+    
     var [innerHeight,innerWidth, tickFontSize, axisLabelSize] = preparationFunction(targetId, title, outerWidth, outerHeight, marginTop, marginRight, marginBottom, marginLeft,svgBackgroundColor);
 
     //select drawing area
@@ -225,51 +225,11 @@ function barDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1
     //drawing function
     function render(data) {
 
-        //extracting the data
-        var xData = data.map(d=>d[xAxisC]);
-        var yData = data.map(d=>d[yAxisC]);
-        var padding = (xData.length-1)/xData.length
+        [xScale, yScale, padding, yAxisFormat] = xAndYScale(data, xAxisC,yAxisC,true,'scaleBand','scaleLinear', innerWidth, innerHeight, yAxisFormat)
 
-        //defining xAxis Scale
-        var xScale = d3.scaleBand()
-            .domain(xData)
-            .range([0,innerWidth])
-            .padding(padding)
+        xScale = xScale.padding(padding);
 
-        //defining xAxis Labels
-        g.append("g")
-            .attr("transform", "translate(0," + innerHeight + ")")
-            .attr('class', "x axis")
-            .style('font-size',tickFontSize+'pt')
-            .call(d3.axisBottom(xScale)
-                .tickSize(xTicksShow==true?-innerHeight:0))
-            .selectAll('text')
-                .attr("transform", "translate(0,10)")
-        
-        //defining yAxis Scale
-        var yScale = d3.scaleLinear()
-            .domain([0,d3.max(yData)])
-            .range([innerHeight,0])
-
-        //yAxisFormat default
-        yAxisFormat == "null" & (d3.max(yData)-d3.min(yData)>1000)?yAxisFormat="~s":null
-        
-
-        //defining yAxis Labels
-        g.append("g")
-        .attr('class', "y axis")
-        .style('font-size',tickFontSize+'pt')
-        .call(d3.axisLeft(yScale)
-            .tickSize(yTicksShow==true?-innerWidth:0)
-            .tickFormat(yAxisFormat == "null"? null :d3.format(yAxisFormat)))
-        .append("text")
-            .attr("transform", "rotate(-90)")
-            .attr('y',-60)
-            .attr('x', -(innerHeight / 2)+30)
-            .attr("class", 'label')
-            .style('font-size',axisLabelSize + 'pt')
-            .text(yAxisLabelText)
-            .attr('fill','black')
+        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, "null", yAxisFormat, marginLeft, axisLabelSize, "", yAxisLabelText)
         
         //drawing the bars
         g.selectAll("rect")
@@ -285,6 +245,164 @@ function barDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1
                     .text(d => d[yAxisC])
                 .exit()
                 .remove();
+
+    }
+
+    typeof data == "string"?d3.dsv(",", data, d3.autoType).then((data) => render(data)):render(data);
+
+}
+
+function violinDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1000, outerHeight = 500, yAxisFormat = 'null', marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 120,svgBackgroundColor='white',title='', xTicksShow = false, yTicksShow=false) {
+
+    ////preparing the xAxis Label
+    var xAxisLabelText = xAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+    var yAxisLabelText = yAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+
+    ////general preparation//TODO: fix title for histogram
+    title == ""? title = yAxisLabelText + " by " + xAxisLabelText : null
+    
+    var [innerHeight,innerWidth, tickFontSize, axisLabelSize] = preparationFunction(targetId, title, outerWidth, outerHeight, marginTop, marginRight, marginBottom, marginLeft,svgBackgroundColor);
+
+    //select drawing area
+    var g = d3.select('.drawingArea');
+    
+    //drawing function
+    function render(data) {
+
+        [xScale, yScale, padding, yAxisFormat] = xAndYScale(data, xAxisC,yAxisC,false,'scaleBand','scaleLinear', innerWidth, innerHeight, yAxisFormat, true)
+
+        xScale = xScale.padding(padding);
+
+        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, "null", yAxisFormat, marginLeft, axisLabelSize, "", yAxisLabelText)
+        
+        // Features of the histogram
+        var histogram = d3.histogram()
+            .domain(yScale.domain())
+            .thresholds(yScale.ticks(20))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
+            .value(d => d)
+
+        // Compute the binning for each group of the dataset
+        var sumStat = d3.nest()  // nest function allows to group the calculation per level of a factor
+            .key(function(d) { return d[xAxisC];})
+            .rollup(function(d) {   // For each key..
+              input = d.map(function(g) { return g[yAxisC];})    // Keep the variable called Sepal_Length
+              bins = histogram(input)   // And compute the binning on it.
+              return(bins)
+            })
+            .entries(data)
+
+        
+        // What is the biggest number of value in a bin? We need it cause this value will have a width of 100% of the bandwidth.
+        var maxNum = 0
+        for ( i in sumStat ){
+            allBins = sumStat[i].value
+            lengths = allBins.map(function(a){return a.length;})
+            longest = d3.max(lengths)
+            if (longest > maxNum) { maxNum = longest }
+        }
+
+        // The maximum width of a violin must be x.bandwidth = the width dedicated to a group
+        var xNum = d3.scaleLinear()
+            .range([0, xScale.bandwidth()])
+            .domain([-maxNum,maxNum])
+
+    
+        //drawing the bars
+        g.selectAll("myViolin")
+            .data(sumStat)
+            .enter()        // So now we are working group per group
+            .append("g")
+                .attr("transform", function(d){ return("translate(" + xScale(d.key) +" ,0)") } ) // Translation on the right to be at the group position
+            .append("path")
+                .datum(function(d){ return(d.value)})     // So now we are working bin per bin
+                .style("stroke", "none")
+                .style("fill","#69b3a2")
+                .attr("d", d3.area()
+                    .x0(function(d){ return(xNum(-d.length)) } )
+                    .x1(function(d){ return(xNum(d.length)) } )
+                    .y(function(d){ return(yScale(d.x0)) } )
+                    .curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
+                )
+    
+
+    }
+
+    typeof data == "string"?d3.dsv(",", data, d3.autoType).then((data) => render(data)):render(data);
+
+}
+
+function histogramDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth = 1000, outerHeight = 500, yAxisFormat = 'null', marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 120,svgBackgroundColor='white',title='', xTicksShow = false, yTicksShow=false) {
+
+    ////preparing the xAxis Label
+    var xAxisLabelText = xAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+    var yAxisLabelText = yAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
+
+    ////general preparation//TODO: fix title for histogram
+    title == ""? title = yAxisLabelText + " by " + xAxisLabelText : null
+    
+    var [innerHeight,innerWidth, tickFontSize, axisLabelSize] = preparationFunction(targetId, title, outerWidth, outerHeight, marginTop, marginRight, marginBottom, marginLeft,svgBackgroundColor);
+
+    //select drawing area
+    var g = d3.select('.drawingArea');
+    
+    //drawing function
+    function render(data) {
+
+        [xScale, yScale, padding, yAxisFormat] = xAndYScale(data, xAxisC,yAxisC,false,'scaleBand','scaleLinear', innerWidth, innerHeight, yAxisFormat, true)
+
+        xScale = xScale.padding(padding);
+
+        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, "null", yAxisFormat, marginLeft, axisLabelSize, "", yAxisLabelText)
+        
+        // Features of the histogram
+        var histogram = d3.histogram()
+            .domain(yScale.domain())
+            .thresholds(yScale.ticks(20))    // Important: how many bins approx are going to be made? It is the 'resolution' of the violin plot
+            .value(d => d)
+
+        // Compute the binning for each group of the dataset
+        var sumStat = d3.nest()  // nest function allows to group the calculation per level of a factor
+            .key(function(d) { return d[xAxisC];})
+            .rollup(function(d) {   // For each key..
+              input = d.map(function(g) { return g[yAxisC];})    // Keep the variable called Sepal_Length
+              bins = histogram(input)   // And compute the binning on it.
+              return(bins)
+            })
+            .entries(data)
+
+        
+        // What is the biggest number of value in a bin? We need it cause this value will have a width of 100% of the bandwidth.
+        var maxNum = 0
+        for ( i in sumStat ){
+            allBins = sumStat[i].value
+            lengths = allBins.map(function(a){return a.length;})
+            longest = d3.max(lengths)
+            if (longest > maxNum) { maxNum = longest }
+        }
+
+        // The maximum width of a violin must be x.bandwidth = the width dedicated to a group
+        var xNum = d3.scaleLinear()
+            .range([0, xScale.bandwidth()])
+            .domain([-maxNum,maxNum])
+
+    
+        //drawing the bars
+        g.selectAll("myViolin")
+            .data(sumStat)
+            .enter()        // So now we are working group per group
+            .append("g")
+                .attr("transform", function(d){ return("translate(" + xScale(d.key) +" ,0)") } ) // Translation on the right to be at the group position
+            .append("path")
+                .datum(function(d){ return(d.value)})     // So now we are working bin per bin
+                .style("stroke", "none")
+                .style("fill","#69b3a2")
+                .attr("d", d3.area()
+                    .x0(function(d){ return(xNum(-d.length)) } )
+                    .x1(function(d){ return(xNum(d.length)) } )
+                    .y(function(d){ return(yScale(d.x0)) } )
+                    .curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
+                )
+    
 
     }
 
