@@ -37,10 +37,8 @@ const loadingFile = () => {
         d3.select("#dropDownGroup").selectAll('label').remove()
         d3.select("#dropDownGroup").selectAll('select').remove()
         populate(data.columns, "xAxis: ", "xAxisColumn");
-        populate(data.columns, "yAxis: ", "yAxisColumn");
-
-        document.querySelector("#xAxisColumn").selectedIndex = 4;
-        document.querySelector("#yAxisColumn").selectedIndex = 0;
+        populate(['',...data.columns], "Color Column: ", "ColorColumn");
+        document.querySelector("#xAxisColumn").selectedIndex = 0;
 
         draw();
     });
@@ -50,14 +48,12 @@ const draw = () => {
     histogramDraw(
         document.querySelector("#filePath").value,
         document.querySelector("#xAxisColumn").value,
-        document.querySelector("#yAxisColumn").value,
-        "#drawingArea",
+        document.querySelector("#ColorColumn").value,
+        undefined,
+        document.querySelector("#xAxisMax").value,
+        '#drawingArea',
         document.querySelector("#drawingWidth").value,
         document.querySelector("#drawingHeight").value,
-        document.querySelector("#yAxisTickFormat").value,
-        undefined,undefined,undefined,undefined,
-        document.querySelector('#svgBackgroundColor').value,
-        document.querySelector('#title').value
     )
 }
 
