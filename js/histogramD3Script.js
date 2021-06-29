@@ -22,7 +22,7 @@ const loadingFile = () => {
             .attr("onchange", "draw()")
             .attr('class', 'form-control')
 
-        var options = dropDown.selectAll("option")
+        dropDown.selectAll("option")
             .data(data)
             .enter().append("option")
             .attr("value", function (d) {
@@ -49,6 +49,7 @@ const draw = () => {
         document.querySelector("#filePath").value,
         document.querySelector("#xAxisColumn").value,
         document.querySelector("#ColorColumn").value,
+        document.querySelector("#binNumber").value,
         undefined,
         document.querySelector("#xAxisMax").value,
         '#drawingArea',

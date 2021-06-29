@@ -24,23 +24,23 @@ function preparationFunction(targetId, title, outerWidth, outerHeight, marginTop
 
     d3.select(targetId)
         .append("svg")
-        .attr("width", outerWidth)
-        .attr("height", outerHeight)
-        .style('border', "1px solid black")
-        .style('background-color', svgBackgroundColor)
-        .append("g")
-        .attr('transform', 'translate(' + marginLeft + ',' + marginTop + ')')
-        .attr('class', 'drawingArea')
+            .attr("width", outerWidth)
+            .attr("height", outerHeight)
+            .style('border', "1px solid black")
+            .style('background-color', svgBackgroundColor)
+                .append("g")
+                .attr('transform', 'translate(' + marginLeft + ',' + marginTop + ')')
+                .attr('class', 'drawingArea')
 
     d3.select(targetId)
         .select('svg')
-        .append('text')
-        .attr("x", (outerWidth / 2))
-        .attr("y", (marginTop / 2) + 5)
-        .attr("text-anchor", "middle")
-        .style("font-size", "16pt")
-        .style("font-weight", "bold")
-        .text(title);
+            .append('text')
+                .attr("x", (outerWidth / 2))
+                .attr("y", (marginTop / 2) + 5)
+                .attr("text-anchor", "middle")
+                .style("font-size", "16pt")
+                .style("font-weight", "bold")
+                .text(title);
 
     d3.select(targetId)
         .select("svg")
@@ -72,7 +72,7 @@ function xAndYScale(data, xAxisC, yAxisC, bar, xScale, yScale, innerWidth, inner
     return [xScale, yScale, padding, yAxisFormat]
 }
 
-function drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, xAxisFormat, yAxisFormat, marginLeft, axisLabelSize, xAxisLabelText, yAxisLabelText) {
+function drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xTicksShow, yTicksShow, xAxisFormat, yAxisFormat, marginLeft, axisLabelSize, xAxisLabelText, yAxisLabelText, numOfBins=null) {
     //select drawing area
     var g = d3.select('.drawingArea');
 
@@ -83,7 +83,8 @@ function drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, xT
         .style('font-size', tickFontSize + 'pt')
         .call(d3.axisBottom(xScale)
             .tickSize(xTicksShow == true ? -innerHeight : 0)
-            .tickFormat(xAxisFormat == "null" ? null : d3.format(xAxisFormat)))
+            .tickFormat(xAxisFormat == "null" ? null : d3.format(xAxisFormat))
+            .ticks(numOfBins))
         .append("text")
             .attr('text-anchor', 'middle')
             .attr("x", innerWidth / 2)
@@ -170,6 +171,7 @@ function scatterDraw(dataPath, xAxisC, yAxisC, radiusData = "", radius = 5, colo
                 .attr('onclick', 'highlightSelection(this, "' + targetId + '" ,"circle",' + opacitySet + ',"' + colorData + '")') //do function here
                 .attr('class', d => d)
                 .attr('fill', colorScale)
+                .style('cursor','pointer')
                 .exit()
                 .remove();
 
@@ -352,15 +354,16 @@ function violinDraw(data, xAxisC, yAxisC, targetId = "#drawingArea", outerWidth 
 
 }
 
-function histogramDraw(data, xAxisC, colorData = "", color = "#69b3a2", xAxisMax=0,targetId = "#drawingArea",outerWidth = 1000, outerHeight = 500,marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 70, svgBackgroundColor = 'white', title = '') {
+function histogramDraw(data, xAxisC, colorData = "", numOfBins = 70, color = "#69b3a2", xAxisMax=0,targetId = "#drawingArea",outerWidth = 1000, outerHeight = 500,marginTop = 40, marginRight = 70, marginBottom = 60, marginLeft = 70, svgBackgroundColor = 'white', title = '') {
 
     var xAxisLabelText = xAxisC.split(/\.|_| /).map(d => d[0].toUpperCase() + d.slice(1)).join(" ");
 
+    
     // set the dimensions and margins of the graph
     innerWidth = outerWidth - marginLeft - marginRight,
     innerHeight = outerHeight - marginTop - marginBottom;
 
-    //general preparation//TODO: fix title for histogram
+    //general preparation
     title == "" ? title = "Distribution for " + xAxisLabelText : null
 
     var [innerHeight, innerWidth, tickFontSize, axisLabelSize] = preparationFunction(targetId, title, outerWidth, outerHeight, marginTop, marginRight, marginBottom, marginLeft, svgBackgroundColor);
@@ -369,20 +372,24 @@ function histogramDraw(data, xAxisC, colorData = "", color = "#69b3a2", xAxisMax
     //select drawing area
     var g = d3.select('.drawingArea');
 
+    d3.select('svg').call(d3.zoom().on('zoom', e => {
+        g.attr('transform', e.transform);
+    }));
+
     function render(data) {
 
         xAxisMax==0 ? xAxisMax=d3.max(data, d => d[xAxisC]) : null
 
         //set xAxis Scale
         var xScale = d3.scaleLinear()
-            .domain([0, xAxisMax])
+            .domain([0, xAxisMax*1.1])
             .range([0, innerWidth]);
 
         // set the parameters for the histogram
         var histogram = d3.histogram()
             .value(d => d[xAxisC]) // I need to give the vector of value
             .domain(xScale.domain()) // then the domain of the graphic
-            .thresholds(xScale.ticks(70)); //TODO: fix bin with ricks
+            .thresholds(xScale.ticks(numOfBins)); //TODO: fix bin with ricks
 
         bins = []
 
@@ -401,24 +408,35 @@ function histogramDraw(data, xAxisC, colorData = "", color = "#69b3a2", xAxisMax
         var yScale = d3.scaleLinear()
             .range([innerHeight, 0]);
 
-        yScale.domain([0, d3.max(bins[0], d => d.length)]); // d3.hist has to be called before the Y axis obviously
+        yScale.domain([0, d3.max(bins.flat(), d => d.length)*1.15]);
         
-        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, false, false, "null", "null", marginLeft, axisLabelSize, xAxisLabelText, "")
+        drawingAxises(innerHeight, innerWidth, tickFontSize, xScale, yScale, false, false, "null", "null", marginLeft, axisLabelSize, xAxisLabelText, "", numOfBins)
 
         i =0
         // append the bar rectangles to the g element
         for (bin of bins){
-            g.selectAll('rect'+i)
+            shapes = g.selectAll('rect'+i)
             .data(bin)
             .enter()
+            .append('g')
+                .attr("transform", d => "translate(" + xScale(d.x0) + "," + yScale(d.length) + ")")
+            
+            shapes
             .append("rect")
                 .attr("x", 1)
-                .attr("transform", d => "translate(" + xScale(d.x0) + "," + yScale(d.length) + ")")
                 .attr("width", d => xScale(d.x1) - xScale(d.x0) - 1)
                 .attr("width", d => xScale(d.x1) - xScale(d.x0) - 1)
                 .attr("height", d => innerHeight - yScale(d.length))
+                .attr('ry',2)
                 .attr("opacity", typeof colorScale == "string" ? 1 : 0.5)
                 .attr('fill', data => typeof colorScale == "string" ? colorScale : colorScale(i))
+            
+            shapes
+                .append('text')
+                    .attr('text-anchor', 'middle')
+                    .attr('transform',d => 'translate(' + ((xScale(d.x1) - xScale(d.x0) - 1)/2) + ',-5)')
+                    .attr('font-weight','bold')
+                    .text(d => d.length == 0 ? '' : d.length)
             i++;
         }
     }

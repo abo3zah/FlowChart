@@ -73,22 +73,14 @@
         <label for="drawingHeight" class="form-control">Drawing Height</label>
         <input type="number" min=100 name="drawingHeight" id="drawingHeight" class="form-control" value=450 onchange="draw()">
 
-        <label for="yAxisTickFormat" class="form-control">yAxis Tick Format</label>
-        <select name="yAxisTickFormat" id="yAxisTickFormat" class="form-control" onchange="draw()">
-            <option value="null">Auto</option>
-            <option value=",.0f">Normal</option>
-            <option value="=.0f">Year</option>
-            <option value="=~s">Long Numbers</option>
-            <option value="=$~s">Accounting</option>
-            <option value="=.1%">Percentage</option>
-            <option value="=~e">Scientific</option>
-        </select>
-
         <label for="svgBackgroundColor" class="form-control">Background Color</label>
         <input type="color" name="svgBackgroundColor" id="svgBackgroundColor" class="form-control" onchange="draw()" value="#f2f2f2">
 
         <label for="xAxisMax" class="form-control">xAxis Max</label>
-        <input type="number" min=0 name="xAxisMax" id="xAxisMax" class="form-control" value=0 onchange="draw()">
+        <input type="number" name="xAxisMax" id="xAxisMax" class="form-control" value=0 onchange="draw()">
+
+        <label for="binNumber" class="form-control">Number of Bins</label>
+        <input type="number" name="binNumber" id="binNumber" class="form-control" value=40 onchange="draw()">
     </div>
 
     <hr>
